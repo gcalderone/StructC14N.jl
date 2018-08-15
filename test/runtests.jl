@@ -1,4 +1,4 @@
-using NormalizeStructures
+using NormalizeStructure
 using Test
 
 template = (xrange=NTuple{2,Number},

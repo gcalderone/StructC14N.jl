@@ -1,4 +1,4 @@
-module NormalizeStructures
+module NormalizeStructure
 
 export normalize
 
