@@ -62,3 +62,12 @@ c = normalize(template,
 @test c.xrange == (21, 22)
 @test c.yrange == (0., 0.)
 @test c.title == "Bar"
+
+
+function wrapper(template; kwargs...)
+    return NormalizeStructure.normalize(template; kwargs...)
+end
+c = wrapper(template; xr=(31,32), tit="BAZ")
+@test c.xrange == (31, 32)
+@test c.yrange == (0., 0.)
+@test c.title == "BAZ"
