@@ -91,18 +91,26 @@ Canonicalize the `input` named tuple according to `template`, and
 return the "canonicalized" named tuple.
 
 Canonicalization rules are as follows:
-- output keys are the same as `template`;
-- output *default* values are determined as follows:
-  - if the corresponding value in `template` is a Type `T`, the
-    default value is `Missing`;
-  - if the corresponding value in `template` is of Type `T`, the
-    default value is the value itself;
-- output default values are *overridden* by values in `input` if a key
-  in `input` is an abbreviation of the keys in template`;
+- output keys are the same as in `template`;
+- if `input` contains less items than `template`, the default values
+  in `template` will be used to fill unspecified values;
+- output default values are determined as follows:
+  - if `template` is a named tuple and if one of its value is a Type `T`, the
+    corresponding default value is `Missing`;
+  - if `template` is not a named tuple, or if one of its value is of Type `T`, the
+    corresponging default value is the value itself;
+- output default values are overridden by values in `input` if a key
+  in `input` is the same, or it is an unambiguous abbreviation, of one
+  of the keys in `template`;
+
+- output override occurs regardless of the order of items in
+  `template` and `input`;
+
 - if a key in `input` is not an abbreviation of the keys in `template`,
   or if the abbreviation is ambiguous, an error is raised;
+
 - values in output are deep copied from `input`, and converted to the
-  appropriate type.
+  appropriate type.  If conversion is not possible an error is raised.
 """
 function canonicalize(template::NamedTuple, input::NamedTuple)
     outval = defaultvalues(template)

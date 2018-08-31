@@ -116,7 +116,7 @@ Foo(Keyw=10, A=20.0, S=30, KeyS="baz") # Much shorter, isn't it?
 
 
 A wrong abbreviation or a wrong type will result in errors:
-``julia
+```julia
 Foo(aa=1)
 Foo(Keyw="abc")
 ```
