@@ -33,7 +33,7 @@ Canonicalization rules are as follows:
     corresponding default value is `Missing`;
   - if `template` is not a named tuple, or if one of its value is of Type `T`, the
     corresponging default value is the value itself;
-	
+
 - output default values are overridden by values in `input` if a key
   in `input` is the same, or it is an unambiguous abbreviation, of one
   of the keys in `template`;
@@ -46,8 +46,8 @@ Canonicalization rules are as follows:
 
 - values in output are deep copied from `input`, and converted to the
   appropriate type.  If conversion is not possible an error is raised.
-  
-  
+
+
 ## Examples
 
 ```
@@ -81,7 +81,9 @@ abbreviated keyword names (i.e. it can be used as a replacement for
 [AbbrvKW.jl](https://github.com/gcalderone/AbbrvKW.jl)).Consider the
 following function:
 ``` julia
-function Foo(; Keyword1::Int=1, AnotherKeyword::Float64=2.0, StillAnotherOne=3, KeyString::String="bar")
+function Foo(; OptionalKW::Union{Missing,Bool}=missing, Keyword1::Int=1,
+               AnotherKeyword::Float64=2.0, StillAnotherOne=3, KeyString::String="bar")
+    @show OptionalKW
     @show Keyword1
     @show AnotherKeyword
     @show StillAnotherOne
@@ -97,8 +99,10 @@ Foo(Keyword1=10, AnotherKeyword=20.0, StillAnotherOne=30, KeyString="baz")
 By using `canonicalize` we may re-implement the function as follows
 ```julia
 function Foo(; kwargs...)
-	template = (Keyword1=1, AnotherKeyword=2.0, StillAnotherOne=3, KeyString="bar")
+    template = (; OptionalKW=Bool, Keyword1=1,
+               AnotherKeyword=2.0, StillAnotherOne=3, KeyString="bar")
     kw = StructC14N.canonicalize(template; kwargs...)
+    @show kw.OptionalKW
     @show kw.Keyword1
     @show kw.AnotherKeyword
     @show kw.StillAnotherOne
@@ -111,41 +115,8 @@ Foo(Keyw=10, A=20.0, S=30, KeyS="baz") # Much shorter, isn't it?
 ```
 
 
-
-
-
-
-
-
-
-
-we want to
-implement a `plot` function accepting keywords for the X range, the Y
-range and the plot title.  An example is as follows:
-```julia
-function plot(x, y; 
-              xrange=NTuple{2,Number},
-              yrange=NTuple{2,Number},
-              title="Plot title")
-	...
-end
-
-# Call the `plot` function using complete keywords name
-plot(x, y, xrange=(1,2), title="Foo")
+A wrong abbreviation or a wrong type will result in errors:
+``julia
+Foo(aa=1)
+Foo(Keyw="abc")
 ```
-
-
-```julia
-# Define a function accepting keywords
-function myfunc(; kwargs...)
-    template = (xrange=NTuple{2,Number},
-                yrange=NTuple{2,Number},
-                title="A string")
-	kw = canonicalize(template; kwargs...)
-	
-	println
-StructC14N.
-end
-
-```
-
