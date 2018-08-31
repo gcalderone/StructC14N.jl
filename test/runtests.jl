@@ -65,7 +65,7 @@ c = canonicalize(template,
 
 
 function wrapper(template; kwargs...)
-    return StructC14N.canonicalize(template; kwargs...)
+    return canonicalize(template; kwargs...)
 end
 c = wrapper(template; xr=(31,32), tit="BAZ")
 @test c.xrange == (31, 32)

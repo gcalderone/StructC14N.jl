@@ -9,21 +9,24 @@
 
 This package exports the `canonicalize` function which allows
 *canonicalization* of structures and named tuples according to a
-*template* structure or named tuple
+*template* structure or named tuple.
 
 The signature is as follows:
-```
+```julia
 canonicalize(template, input)
 ```
-`template` can be either a structure or a named tuple.  `input` can be a structure, a named tuple or a tuple.  In the latter case the tuple must contains the same number of items as the `template`
+`template` can be either a structure or a named tuple.  Return value
+has the same type as `template`.  `input` can be a structure, a named
+tuple or a tuple.  In the latter case the tuple must contains the same
+number of items as the `template`.
 
 Type `? canonicalize` in the REPL to see the documentation for individual methods.
 
 Canonicalization rules are as follows:
-- output keys are the same as those in `template`;
+- output keys are the same as in `template`;
 
 - if `input` contains less items than `template`, the default values
-  in `template` will be used to fill unspecified keys;
+  in `template` will be used to fill unspecified values;
 
 - output default values are determined as follows:
   - if `template` is a named tuple and if one of its value is a Type `T`, the
@@ -42,4 +45,107 @@ Canonicalization rules are as follows:
   or if the abbreviation is ambiguous, an error is raised;
 
 - values in output are deep copied from `input`, and converted to the
-  appropriate type.
+  appropriate type.  If conversion is not possible an error is raised.
+  
+  
+## Examples
+
+```
+using StructC14N
+
+# Create a template
+template = (xrange=NTuple{2,Number},
+            yrange=NTuple{2,Number},
+            title="A string")
+
+# Create input named tuple...
+nt = (xr=(1,2), tit="Foo")
+
+# Dump canonicalized version
+dump(canonicalize(template, nt))
+```
+
+will result in
+```julia
+NamedTuple{(:xrange, :yrange, :title),Tuple{Tuple{Int64,Int64},Missing,String}}
+  xrange: Tuple{Int64,Int64}
+    1: Int64 1
+    2: Int64 2
+  yrange: Missing missing
+  title: String "Foo"
+```
+
+
+One of the main use of `canonicalize` is to call functions using
+abbreviated keyword names (i.e. it can be used as a replacement for
+[AbbrvKW.jl](https://github.com/gcalderone/AbbrvKW.jl)).Consider the
+following function:
+``` julia
+function Foo(; Keyword1::Int=1, AnotherKeyword::Float64=2.0, StillAnotherOne=3, KeyString::String="bar")
+    @show Keyword1
+    @show AnotherKeyword
+    @show StillAnotherOne
+    @show KeyString
+end
+```
+The only way to use the keywords is to type their entire names,
+resulting in very long code lines, i.e.:
+``` julia
+Foo(Keyword1=10, AnotherKeyword=20.0, StillAnotherOne=30, KeyString="baz")
+```
+
+By using `canonicalize` we may re-implement the function as follows
+```julia
+function Foo(; kwargs...)
+	template = (Keyword1=1, AnotherKeyword=2.0, StillAnotherOne=3, KeyString="bar")
+    kw = StructC14N.canonicalize(template; kwargs...)
+    @show kw.Keyword1
+    @show kw.AnotherKeyword
+    @show kw.StillAnotherOne
+    @show kw.KeyString
+end
+```
+And call it using abbreviated keyword names:
+```julia
+Foo(Keyw=10, A=20.0, S=30, KeyS="baz") # Much shorter, isn't it?
+```
+
+
+
+
+
+
+
+
+
+
+we want to
+implement a `plot` function accepting keywords for the X range, the Y
+range and the plot title.  An example is as follows:
+```julia
+function plot(x, y; 
+              xrange=NTuple{2,Number},
+              yrange=NTuple{2,Number},
+              title="Plot title")
+	...
+end
+
+# Call the `plot` function using complete keywords name
+plot(x, y, xrange=(1,2), title="Foo")
+```
+
+
+```julia
+# Define a function accepting keywords
+function myfunc(; kwargs...)
+    template = (xrange=NTuple{2,Number},
+                yrange=NTuple{2,Number},
+                title="A string")
+	kw = canonicalize(template; kwargs...)
+	
+	println
+StructC14N.
+end
+
+```
+
