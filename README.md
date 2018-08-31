@@ -1,11 +1,8 @@
 # StructC14N.jl
 
-## Canonicalize structures and named tuples according to a user provided template.
+## Structure and named tuple canonicalization.
 
 [![Build Status](https://travis-ci.org/gcalderone/StructC14N.jl.svg?branch=master)](https://travis-ci.org/gcalderone/StructC14N.jl)
-[![Coverage Status](https://coveralls.io/repos/github/gcalderone/StructC14N.jl/badge.svg?branch=master)](https://coveralls.io/github/gcalderone/StructC14N.jl?branch=master)
-[![codecov](https://codecov.io/gh/gcalderone/StructC14N.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/gcalderone/StructC14N.jl)
-
 
 This package exports the `canonicalize` function which allows
 *canonicalization* of structures and named tuples according to a
@@ -22,7 +19,7 @@ number of items as the `template`.
 
 Type `? canonicalize` in the REPL to see the documentation for individual methods.
 
-Canonicalization rules are as follows:
+## Canonicalization rules:
 - output keys are the same as in `template`;
 
 - if `input` contains less items than `template`, the default values
@@ -78,7 +75,7 @@ NamedTuple{(:xrange, :yrange, :title),Tuple{Tuple{Int64,Int64},Missing,String}}
 
 One of the main use of `canonicalize` is to call functions using
 abbreviated keyword names (i.e. it can be used as a replacement for
-[AbbrvKW.jl](https://github.com/gcalderone/AbbrvKW.jl)).Consider the
+[AbbrvKW.jl](https://github.com/gcalderone/AbbrvKW.jl)).  Consider the
 following function:
 ``` julia
 function Foo(; OptionalKW::Union{Missing,Bool}=missing, Keyword1::Int=1,
