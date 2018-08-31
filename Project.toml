@@ -1,10 +1,9 @@
-name = "NormalizeStructure"
+name = "StructC14N"
 uuid = "5369e15c-9fda-11e8-194c-95a38f2a9483"
 authors = ["Giorgio Calderone <giorgio.calderone@gmail.com>"]
 version = "0.1.0"
 
 [deps]
-StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

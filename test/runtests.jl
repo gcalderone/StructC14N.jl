@@ -1,11 +1,11 @@
-using NormalizeStructure
+using StructC14N
 using Test
 
 template = (xrange=NTuple{2,Number},
             yrange=NTuple{2,Number},
             title="A string")
 
-c = normalize(template,
+c = canonicalize(template,
               (xr=(1,2), tit="Foo"))
 
 @test c.xrange == (1, 2)
@@ -13,7 +13,7 @@ c = normalize(template,
 @test c.title == "Foo"
 
 
-c = normalize(template,
+c = canonicalize(template,
               ((1,2), (3.3, 4.4), "Foo"))
 
 @test c.xrange == (1, 2)
@@ -21,7 +21,7 @@ c = normalize(template,
 @test c.title == "Foo"
 
 
-c = normalize(template,
+c = canonicalize(template,
               xr=(21,22), tit="Bar")
 @test c.xrange == (21, 22)
 @test ismissing(c.yrange)
@@ -36,28 +36,28 @@ end
 
 template = AStruct((0,0), (0., 0.), "A string")
 
-c = normalize(template,
+c = canonicalize(template,
               (xr=(1,2), tit="Foo"))
 
 @test c.xrange == (1, 2)
 @test c.yrange == (0., 0.)
 @test c.title == "Foo"
 
-c = normalize(template,
+c = canonicalize(template,
               ((1,2), (3.3, 4.4), "Foo"))
 
 @test c.xrange == (1, 2)
 @test c.yrange == (3.3, 4.4)
 @test c.title == "Foo"
 
-c = normalize(template,
+c = canonicalize(template,
               ((11,12), (13.3, 14.4), "Foo"))
 @test c.xrange == (11, 12)
 @test c.yrange == (13.3, 14.4)
 @test c.title == "Foo"
 
 
-c = normalize(template,
+c = canonicalize(template,
               xr=(21,22), tit="Bar")
 @test c.xrange == (21, 22)
 @test c.yrange == (0., 0.)
@@ -65,7 +65,7 @@ c = normalize(template,
 
 
 function wrapper(template; kwargs...)
-    return NormalizeStructure.normalize(template; kwargs...)
+    return StructC14N.canonicalize(template; kwargs...)
 end
 c = wrapper(template; xr=(31,32), tit="BAZ")
 @test c.xrange == (31, 32)
