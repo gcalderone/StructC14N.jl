@@ -5,6 +5,14 @@
 
 [![Build Status](https://travis-ci.org/gcalderone/StructC14N.jl.svg?branch=master)](https://travis-ci.org/gcalderone/StructC14N.jl)
 
+Install with:
+```julia
+]add StructC14N
+```
+
+________
+
+
 This package exports the `canonicalize` function which allows
 *canonicalization* of structures and named tuples according to a
 *template* structure or named tuple.
@@ -48,7 +56,7 @@ Type `? canonicalize` in the REPL to see the documentation for individual method
 
 ## Examples
 
-```
+```julia
 using StructC14N
 
 # Create a template
