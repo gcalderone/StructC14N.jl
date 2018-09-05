@@ -84,6 +84,23 @@ end
 
 
 
+
+function myconvert(template, vv)
+    if isa(template, Type)
+        tt = template
+    else
+        tt = typeof(template)
+    end
+
+    if typeof(vv) <: AbstractString  &&  tt <: Number
+        return parse(tt, vv)
+    end
+
+    return convert(tt, vv)
+end
+
+
+
 """
 `canonicalize(template::NamedTuple, input::NamedTuple)`
 
@@ -127,11 +144,7 @@ function canonicalize(template::NamedTuple, input::NamedTuple)
         k = findall(long[j] .== keys(template))
         @assert length(k) == 1
         k = k[1]
-        if isa(template[k], Type)
-            outval[k] = convert(template[k], input[i])
-        else
-            outval[k] = convert(typeof(template[k]), input[i])
-        end
+        outval[k] = myconvert(template[k], input[i])
     end
     return NamedTuple{keys(template)}(tuple(outval...))
 end
@@ -152,11 +165,7 @@ function canonicalize(template::NamedTuple, input::Tuple)
     if length(input) > 0
         @assert length(outval) == length(input)
         for i in 1:length(input)
-            if isa(template[i], Type)
-                outval[i] = convert(template[i], input[i])
-            else
-                outval[i] = convert(typeof(template[i]), input[i])
-            end
+            outval[i] = myconvert(template[i], input[i])
         end
     end
     return NamedTuple{keys(template)}(tuple(outval...))
