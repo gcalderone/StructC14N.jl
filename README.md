@@ -126,3 +126,20 @@ A wrong abbreviation or a wrong type will result in errors:
 Foo(aa=1)
 Foo(Keyw="abc")
 ```
+
+
+Another common use of `StructC14N` is in parsing configuration files, e.g.:
+```julia
+configtemplate = (optStr=String,
+                  optInt=Int,
+                  optFloat=Float64)
+
+# Parse a tuple
+configentry = "aa, 1, 2"
+c = canonicalize(configtemplate, (split(configentry, ",")...,))
+
+
+# Parse a named tuple
+configentry = "optFloat=20, optStr=\"aaa\", optInt=10"
+c = canonicalize(configtemplate, eval(Meta.parse("($configentry)")))
+```

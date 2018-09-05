@@ -71,3 +71,24 @@ c = wrapper(template; xr=(31,32), tit="BAZ")
 @test c.xrange == (31, 32)
 @test c.yrange == (0., 0.)
 @test c.title == "BAZ"
+
+
+
+
+configtemplate = (optStr=String,
+                  optInt=Int,
+                  optFloat=Float64)
+
+configentry = "aa, 1, 2"
+c = canonicalize(configtemplate, (split(configentry, ",")...,))
+@test c.optStr == "aa"
+@test c.optInt == 1
+@test c.optFloat == 2.0
+
+configentry = "optFloat=20, optStr=\"aaa\", optInt=10"
+c = canonicalize(configtemplate, eval(Meta.parse("($configentry)")))
+@test c.optStr == "aaa"
+@test c.optInt == 10
+@test c.optFloat == 20.0
+
+
