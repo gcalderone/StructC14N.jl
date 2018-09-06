@@ -71,7 +71,12 @@ function myconvert(template, vv)
         (tt <: Number  ||  tt <: Union{Number, Missing})
         return convert(tt, Meta.parse(vv))
     end
-    return convert(tt, vv)
+
+    if length(methods(convert, (Type{tt}, typeof(vv)))) > 0
+        return convert(tt, vv)
+    end
+    
+    return tt(vv)
 end
 
 
