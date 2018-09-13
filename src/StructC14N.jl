@@ -68,7 +68,6 @@ function myconvert(template, vv)
     end
 
     if isa(tt, Union)
-        println("UNION ", tt)
         if getfield(tt, :a) == Missing
             (ismissing(vv))  &&  (return vv)
             tt = getfield(tt, :b)
@@ -76,7 +75,6 @@ function myconvert(template, vv)
             (ismissing(vv))  &&  (return vv)
             tt = getfield(tt, :a)
         end
-        println(" -> ", tt)
     end
     
     if typeof(vv) <: AbstractString  &&  tt <: Number
