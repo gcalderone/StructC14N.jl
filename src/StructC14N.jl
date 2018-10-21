@@ -4,11 +4,14 @@ export canonicalize
 
 import Base.convert
 
+######################################################################
+# Private functions
+######################################################################
 
 """
-`convert(NamedTuple, str)`
+  `convert(NamedTuple, str)`
 
-Convert a structure `str` into a named tuple.
+  Convert a structure `str` into a named tuple.
 """
 function convert(::Type{NamedTuple}, str)
     k = fieldnames(typeof(str))
@@ -17,11 +20,11 @@ end
 
 
 """
-`findabbrv(v::Vector{Symbol})`
-
-Find all unique abbreviations of symbols in `v`.  Return a tuple of
-two `Vector{Symbol}`: the first contains all possible abbreviations;
-the second contains the corresponding un-abbreviated symbol
+  `findabbrv(v::Vector{Symbol})`
+  
+  Find all unique abbreviations of symbols in `v`.  Return a tuple of
+  two `Vector{Symbol}`: the first contains all possible abbreviations;
+  the second contains the corresponding un-abbreviated symbol
 """
 function findabbrv(symLong::Vector{Symbol})
     @assert length(symLong) >= 1
@@ -89,12 +92,17 @@ function myconvert(template, vv)
 end
 
 
+######################################################################
+# Public functions
+######################################################################
 
+
+# input::NamedTuple
 """
-`canonicalize(template::NamedTuple, input::NamedTuple)`
-
-Canonicalize the `input` named tuple according to `template` and
-return the "canonicalized" named tuple.
+  `canonicalize(template::NamedTuple, input::NamedTuple)`
+  
+  Canonicalize the `input` named tuple according to `template` and
+  return the "canonicalized" named tuple.
 """
 function canonicalize(template::NamedTuple, input::NamedTuple)
     (abbrv, long) = findabbrv(collect(keys(template)))
@@ -130,10 +138,10 @@ end
 
 
 """
-`canonicalize(template::DataType, input::NamedTuple)`
-
-Canonicalize the `input` named tuple according to `template` and
-return the "canonicalized" structure.
+  `canonicalize(template::DataType, input::NamedTuple)`
+  
+  Canonicalize the `input` named tuple according to `template` and
+  return the "canonicalized" structure.
 """
 function canonicalize(template::DataType, input::NamedTuple)
     (abbrv, long) = findabbrv(collect(fieldnames(template)))
@@ -159,51 +167,48 @@ end
 
 
 """
-`canonicalize(template, input::NamedTuple)`
-
-Canonicalize the `input` named tuple according to `template` and
-return the "canonicalized" structure.
+  `canonicalize(template, input::NamedTuple)`
+  
+  Canonicalize the `input` named tuple according to `template` and
+  return the "canonicalized" structure.
 """
 canonicalize(template, input::NamedTuple) =
     return canonicalize(typeof(template), merge(convert(NamedTuple, template), input))
 
 
-
-
+# input::Tuple
 """
-`canonicalize(template::NamedTuple, input::Tuple)`
-
-Canonicalize the `input` tuple according to `template`, and
-return the "canonicalized" named tuple.
+  `canonicalize(template::NamedTuple, input::Tuple)`
+  
+  Canonicalize the `input` tuple according to `template`, and
+  return the "canonicalized" named tuple.
 """
 canonicalize(template::NamedTuple, input::Tuple) = canonicalize(template, NamedTuple{keys(template)}(input))
 
 
 """
-`canonicalize(template::DataType, input::Tuple)`
-
-Canonicalize the `input` tuple according to `template`, and
-return the "canonicalized" structure.
+  `canonicalize(template::DataType, input::Tuple)`
+  
+  Canonicalize the `input` tuple according to `template`, and
+  return the "canonicalized" structure.
 """
 canonicalize(template::DataType, input::Tuple) = canonicalize(template, NamedTuple{fieldnames(template)}(input))
 
 
 """
-`canonicalize(template, input::Tuple)`
-
-Canonicalize the `input` tuple according to the `template` structure, and
-return the "canonicalized" structure.
+  `canonicalize(template, input::Tuple)`
+  
+  Canonicalize the `input` tuple according to the `template` structure, and
+  return the "canonicalized" structure.
 """
 canonicalize(template, input::Tuple) = canonicalize(template, NamedTuple{fieldnames(typeof(template))}(input))
 
 
-
-
 """
-`canonicalize(template, kwargs...)`
-
-Canonicalize the key/value pairs given as keywords according to the
-`template` structure or named tuple.
+  `canonicalize(template, kwargs...)`
+  
+  Canonicalize the key/value pairs given as keywords according to the
+  `template` structure or named tuple.
 """
 function canonicalize(template; kwargs...)
     a = collect(kwargs)
