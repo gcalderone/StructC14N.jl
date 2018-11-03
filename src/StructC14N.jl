@@ -11,7 +11,7 @@ import Base.convert
 """
   `convert(NamedTuple, str)`
 
-  Convert a structure `str` into a named tuple.
+  Convert a structure into a named tuple.
 """
 function convert(::Type{NamedTuple}, str)
     k = fieldnames(typeof(str))
@@ -24,7 +24,7 @@ end
   
   Find all unique abbreviations of symbols in `v`.  Return a tuple of
   two `Vector{Symbol}`: the first contains all possible abbreviations;
-  the second contains the corresponding un-abbreviated symbol
+  the second contains the corresponding un-abbreviated symbols.
 """
 function findabbrv(symLong::Vector{Symbol})
     @assert length(symLong) >= 1
