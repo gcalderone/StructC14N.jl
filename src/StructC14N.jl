@@ -21,7 +21,7 @@ end
 
 """
   `findabbrv(v::Vector{Symbol})`
-  
+
   Find all unique abbreviations of symbols in `v`.  Return a tuple of
   two `Vector{Symbol}`: the first contains all possible abbreviations;
   the second contains the corresponding un-abbreviated symbols.
@@ -79,15 +79,18 @@ function myconvert(template, vv)
             tt = getfield(tt, :a)
         end
     end
-    
+
     if typeof(vv) <: AbstractString  &&  tt <: Number
         return convert(tt, Meta.parse(vv))
+    end
+    if typeof(vv) <: Number  &&  tt <: AbstractString
+        return string(vv)
     end
 
     if length(methods(convert, (Type{tt}, typeof(vv)))) > 0
         return convert(tt, vv)
     end
-    
+
     return tt(vv)
 end
 
@@ -100,7 +103,7 @@ end
 # input::NamedTuple
 """
   `canonicalize(template::NamedTuple, input::NamedTuple)`
-  
+
   Canonicalize the `input` named tuple according to `template` and
   return the "canonicalized" named tuple.
 """
@@ -119,7 +122,7 @@ function canonicalize(template::NamedTuple, input::NamedTuple)
             outval[i] = deepcopy(tmp[i])
         end
     end
-    
+
     for i in 1:length(input)
         key = keys(input)[i]
         j = findall(key .== abbrv)
@@ -139,7 +142,7 @@ end
 
 """
   `canonicalize(template::DataType, input::NamedTuple)`
-  
+
   Canonicalize the `input` named tuple according to `template` and
   return the "canonicalized" structure.
 """
@@ -148,7 +151,7 @@ function canonicalize(template::DataType, input::NamedTuple)
 
     #Default values
     outval = Vector{Any}(missing, length(fieldnames(template)))
-    
+
     for i in 1:length(input)
         key = keys(input)[i]
         j = findall(key .== abbrv)
@@ -168,7 +171,7 @@ end
 
 """
   `canonicalize(template, input::NamedTuple)`
-  
+
   Canonicalize the `input` named tuple according to `template` and
   return the "canonicalized" structure.
 """
@@ -179,7 +182,7 @@ canonicalize(template, input::NamedTuple) =
 # input::Tuple
 """
   `canonicalize(template::NamedTuple, input::Tuple)`
-  
+
   Canonicalize the `input` tuple according to `template`, and
   return the "canonicalized" named tuple.
 """
@@ -188,7 +191,7 @@ canonicalize(template::NamedTuple, input::Tuple) = canonicalize(template, NamedT
 
 """
   `canonicalize(template::DataType, input::Tuple)`
-  
+
   Canonicalize the `input` tuple according to `template`, and
   return the "canonicalized" structure.
 """
@@ -197,7 +200,7 @@ canonicalize(template::DataType, input::Tuple) = canonicalize(template, NamedTup
 
 """
   `canonicalize(template, input::Tuple)`
-  
+
   Canonicalize the `input` tuple according to the `template` structure, and
   return the "canonicalized" structure.
 """
@@ -206,7 +209,7 @@ canonicalize(template, input::Tuple) = canonicalize(template, NamedTuple{fieldna
 
 """
   `canonicalize(template, kwargs...)`
-  
+
   Canonicalize the key/value pairs given as keywords according to the
   `template` structure or named tuple.
 """
