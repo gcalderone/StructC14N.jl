@@ -87,6 +87,10 @@ function myconvert(template, vv)
         return string(vv)
     end
 
+    if length(methods(parse, (Type{tt}, typeof(vv)))) > 0
+        return parse(tt, vv)
+    end
+    
     if length(methods(convert, (Type{tt}, typeof(vv)))) > 0
         return convert(tt, vv)
     end
