@@ -111,7 +111,7 @@ end
   Canonicalize the `input` named tuple according to `template` and
   return the "canonicalized" named tuple.
 """
-function canonicalize(template::NamedTuple, input::NamedTuple)
+function canonicalize(template::NamedTuple, input::NamedTuple, dconvert=Dict())
     (abbrv, long) = findabbrv(collect(keys(template)))
 
     # Default values.  Each element in the output vector is `Missing`
@@ -138,7 +138,13 @@ function canonicalize(template::NamedTuple, input::NamedTuple)
         k = findall(long[j] .== keys(template))
         @assert length(k) == 1
         k = k[1]
-        outval[k] = myconvert(template[k], input[i])
+        show(dconvert)
+        show(long)
+        if haskey(dconvert, key)
+            outval[k] = dconvert[key](input[i])
+        else
+            outval[k] = myconvert(template[k], input[i])
+        end
     end
     return NamedTuple{keys(template)}(tuple(outval...))
 end
@@ -150,7 +156,7 @@ end
   Canonicalize the `input` named tuple according to `template` and
   return the "canonicalized" structure.
 """
-function canonicalize(template::DataType, input::NamedTuple)
+function canonicalize(template::DataType, input::NamedTuple, dconvert=Dict())
     (abbrv, long) = findabbrv(collect(fieldnames(template)))
 
     #Default values
@@ -167,7 +173,11 @@ function canonicalize(template::DataType, input::NamedTuple)
         k = findall(long[j] .== fieldnames(template))
         @assert length(k) == 1
         k = k[1]
-        outval[k] = myconvert(fieldtype(template, k), input[i])
+        if haskey(dconvert, key)
+            outval[k] = dconvert[key](input[i])
+        else
+            outval[k] = myconvert(fieldtype(template, k), input[i])
+        end
     end
     return template(outval...)
 end
@@ -179,8 +189,8 @@ end
   Canonicalize the `input` named tuple according to `template` and
   return the "canonicalized" structure.
 """
-canonicalize(template, input::NamedTuple) =
-    return canonicalize(typeof(template), merge(convert(NamedTuple, template), input))
+canonicalize(template, input::NamedTuple, dconvert=Dict()) =
+    return canonicalize(typeof(template), merge(convert(NamedTuple, template), input), dconvert)
 
 
 # input::Tuple
@@ -190,7 +200,7 @@ canonicalize(template, input::NamedTuple) =
   Canonicalize the `input` tuple according to `template`, and
   return the "canonicalized" named tuple.
 """
-canonicalize(template::NamedTuple, input::Tuple) = canonicalize(template, NamedTuple{keys(template)}(input))
+canonicalize(template::NamedTuple, input::Tuple, dconvert=Dict()) = canonicalize(template, NamedTuple{keys(template)}(input), dconvert)
 
 
 """
@@ -199,7 +209,7 @@ canonicalize(template::NamedTuple, input::Tuple) = canonicalize(template, NamedT
   Canonicalize the `input` tuple according to `template`, and
   return the "canonicalized" structure.
 """
-canonicalize(template::DataType, input::Tuple) = canonicalize(template, NamedTuple{fieldnames(template)}(input))
+canonicalize(template::DataType, input::Tuple, dconvert=Dict()) = canonicalize(template, NamedTuple{fieldnames(template)}(input), dconvert)
 
 
 """
@@ -208,7 +218,7 @@ canonicalize(template::DataType, input::Tuple) = canonicalize(template, NamedTup
   Canonicalize the `input` tuple according to the `template` structure, and
   return the "canonicalized" structure.
 """
-canonicalize(template, input::Tuple) = canonicalize(template, NamedTuple{fieldnames(typeof(template))}(input))
+canonicalize(template, input::Tuple, dconvert=Dict()) = canonicalize(template, NamedTuple{fieldnames(typeof(template))}(input), dconvert)
 
 
 """
@@ -217,12 +227,12 @@ canonicalize(template, input::Tuple) = canonicalize(template, NamedTuple{fieldna
   Canonicalize the key/value pairs given as keywords according to the
   `template` structure or named tuple.
 """
-function canonicalize(template; kwargs...)
+function canonicalize(template, dconvert=Dict(); kwargs...)
     a = collect(kwargs)
     k = getindex.(a, 1)
     v = getindex.(a, 2)
     nt = NamedTuple{tuple(k...)}(tuple(v...))
-    return canonicalize(template, nt)
+    return canonicalize(template, nt, dconvert)
 end
 
 

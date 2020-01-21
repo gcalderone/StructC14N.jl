@@ -122,4 +122,14 @@ c = canonicalize(configtemplate, (split(configentry, ",")...,))
 # Parse a named tuple
 configentry = "optFloat=20, optStr=\"aaa\", optInt=10"
 c = canonicalize(configtemplate, eval(Meta.parse("($configentry)")))
+
+# Use a custom conversion routine
+function myparse(input)
+  if input == "ten"
+    return 10
+  end
+  return 1
+end
+configentry = "optFloat=20, optStr=\"aaa\", optInt=\"ten\""
+c = canonicalize(configtemplate, eval(Meta.parse("($configentry)")), Dict(:optInt=>myparse))
 ```
