@@ -138,8 +138,6 @@ function canonicalize(template::NamedTuple, input::NamedTuple, dconvert=Dict())
         k = findall(long[j] .== keys(template))
         @assert length(k) == 1
         k = k[1]
-        show(dconvert)
-        show(long)
         if haskey(dconvert, key)
             outval[k] = dconvert[key](input[i])
         else
