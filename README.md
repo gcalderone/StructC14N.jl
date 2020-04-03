@@ -1,7 +1,6 @@
 # StructC14N.jl
 
 ## Structure and named tuple canonicalization.
-(works only with Julia v0.7/v1.0)
 
 [![Build Status](https://travis-ci.org/gcalderone/StructC14N.jl.svg?branch=master)](https://travis-ci.org/gcalderone/StructC14N.jl)
 
