@@ -1,0 +1,10 @@
+name = "StructC14N"
+uuid = "d2514e9c-36c4-5b8e-97e2-51e7675c221c"
+authors = ["Giorgio Calderone <giorgio.calderone@gmail.com>"]
+version = "0.3.0"
+
+[deps]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+julia = "1.0"
