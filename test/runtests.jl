@@ -91,4 +91,5 @@ c = canonicalize(configtemplate, eval(Meta.parse("($configentry)")))
 @test c.optInt == 10
 @test c.optFloat == 20.0
 
-
+# Regression test for issue #2 (https://github.com/gcalderone/StructC14N.jl/issues/2)
+@test convert(NamedTuple, NamedTuple()) == NamedTuple()

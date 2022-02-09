@@ -2,14 +2,12 @@ module StructC14N
 
 export canonicalize
 
-import Base.convert
-
 ######################################################################
 # Private functions
 ######################################################################
 
 """
-  `convert(NamedTuple, str)`
+  `StructC14N.convert(NamedTuple, str)`
 
   Convert a structure into a named tuple.
 """
@@ -81,7 +79,7 @@ function myconvert(template, vv)
     end
 
     if typeof(vv) <: AbstractString  &&  tt <: Number
-        return convert(tt, Meta.parse(vv))
+        return Base.convert(tt, Meta.parse(vv))
     end
     if typeof(vv) <: Number  &&  tt <: AbstractString
         return string(vv)
@@ -92,7 +90,7 @@ function myconvert(template, vv)
     end
     
     if length(methods(convert, (Type{tt}, typeof(vv)))) > 0
-        return convert(tt, vv)
+        return Base.convert(tt, vv)
     end
 
     return tt(vv)
