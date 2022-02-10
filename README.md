@@ -4,15 +4,33 @@
 
 [![Build Status](https://travis-ci.org/gcalderone/StructC14N.jl.svg?branch=master)](https://travis-ci.org/gcalderone/StructC14N.jl)
 
+## Installation
+
 Install with:
 ```julia
 ]add StructC14N
 ```
 
+## Introduction
 ________
 
+This package exports the `canonicalize(template, input)` function allowing *canonicalization* of input values according to a *template*.  The template must be a structure definition (i.e. a `DataType`), a structure instance or a named tuple,  The input values may be given either as a named tuple, as a tuple, or as keywords.  A characterizing feature in `StructC14N` is that field names in input may be given in abbreviated forms, as long as the abbreviation is unambiguous among the template field names.  The output will be either a structure instance or a named tuple (depending on the type of `template`) whose values are copied from the inputs, or (if a field specification is missing) from the template default values.
 
-This package exports the `canonicalize` function which allows *canonicalization* of structures and named tuples according to a *template* structure or named tuple.
+Type `? canonicalize` in the REPL to see the documentation and examples for individual methods.
+
+
+| Template               | Return type        | Default values | Types specification                                 | Missing inputs result in                         |
+|------------------------|--------------------| ---------------|-----------------------------------------------------|--------------------------------------------------|
+| `NamedTuple` instance  | `NamedTuple`       | Allowed        | As type of default value, or explicitly as a `Type` | Default value or `missing` (1)                   |
+| A structure definition | Structure instance | Not allowed    | Explicitly in structure definition                  | `missing` if allowed by struct , otherwise error |
+| A structure instance   | Structure instance | Allowed        | Explicitly in structure definition                  | Default value                                    |
+
+
+
+
+
+
+
 
 The signature is as follows:
 ```julia
@@ -20,7 +38,6 @@ canonicalize(template, input)
 ```
 `template` can be either a structure or a named tuple.  Return value has the same type as `template`.  `input` can be a structure, a named tuple or a tuple.  In the latter case the tuple must contains the same number of items as the `template`.
 
-Type `? canonicalize` in the REPL to see the documentation for individual methods.
 
 ## Canonicalization rules:
 - output keys are the same as in `template`;

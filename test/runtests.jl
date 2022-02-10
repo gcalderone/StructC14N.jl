@@ -1,77 +1,93 @@
 using StructC14N
 using Test
 
-template = (xrange=NTuple{2,Number},
-            yrange=NTuple{2,Number},
-            title="A string")
+# Template is a NamedTuple
+template = (xrange=NTuple{2, Number},
+            yrange=NTuple{2, Number},
+            title="Default string")
 
-c = canonicalize(template,
-              (xr=(1,2), tit="Foo"))
-
+c = canonicalize(template, (xr=(1,2),))
 @test c.xrange == (1, 2)
 @test ismissing(c.yrange)
+@test c.title == "Default string"
+
+c = canonicalize(template, (xr=(1,2), yrange=(3, 4.), tit="Foo"))
+@test c.xrange == (1, 2)
+@test c.yrange == (3, 4.)
+@test c.title == "Foo"
+
+#  ...input is a Tuple
+@test_throws AssertionError canonicalize(template, ((1,2)))
+c = canonicalize(template, ((1,2), (3, 4.), "Foo"))
+@test c.xrange == (1, 2)
+@test c.yrange == (3, 4.)
+@test c.title == "Foo"
+
+#  ...inputs are given as keywords
+c = canonicalize(template, xr=(1,2), yrange=(3, 4.), tit="Foo")
+@test c.xrange == (1, 2)
+@test c.yrange == (3, 4.)
 @test c.title == "Foo"
 
 
-c = canonicalize(template,
-              ((1,2), (3.3, 4.4), "Foo"))
 
-@test c.xrange == (1, 2)
-@test c.yrange == (3.3, 4.4)
-@test c.title == "Foo"
-
-
-c = canonicalize(template,
-              xr=(21,22), tit="Bar")
-@test c.xrange == (21, 22)
-@test ismissing(c.yrange)
-@test c.title == "Bar"
-
-
-mutable struct AStruct
+# Template is a structure definition
+struct AStruct
     xrange::NTuple{2, Number}
     yrange::NTuple{2, Number}
-    title::String
+    title::Union{Missing, String}
 end
 
-template = AStruct((0,0), (0., 0.), "A string")
+@test_throws MethodError canonicalize(AStruct, (xr=(1,2), tit="Foo"))
 
-c = canonicalize(template,
-              (xr=(1,2), tit="Foo"))
+c = canonicalize(AStruct, (xr=(1,2), yrang=(3, 4.)))
+@test c.xrange == (1, 2)
+@test c.yrange == (3, 4.)
+@test ismissing(c.title)
 
+c = canonicalize(AStruct, (xr=(1,2), yrang=(3, 4.), tit="Foo"))
+@test c.xrange == (1, 2)
+@test c.yrange == (3, 4.)
+@test c.title == "Foo"
+
+#  ...input is a Tuple
+@test_throws AssertionError canonicalize(AStruct, ((1,2)))
+c = canonicalize(AStruct, ((1,2), (3, 4.), "Foo"))
+@test c.xrange == (1, 2)
+@test c.yrange == (3, 4.)
+@test c.title == "Foo"
+
+#  ...inputs are given as keywords
+c = canonicalize(AStruct, xr=(1,2), yrang=(3, 4.), tit="Foo")
+@test c.xrange == (1, 2)
+@test c.yrange == (3, 4.)
+@test c.title == "Foo"
+
+
+# Template is a structure instance
+template = AStruct((0,0), (0.,0.), missing)
+c = canonicalize(template, (xr=(1,2),))
 @test c.xrange == (1, 2)
 @test c.yrange == (0., 0.)
+@test ismissing(c.title)
+
+c = canonicalize(template, (yr=(1,2), xr=(3.3, 4.4), tit="Foo"))
+@test c.yrange == (1, 2)
+@test c.xrange == (3.3, 4.4)
 @test c.title == "Foo"
 
-c = canonicalize(template,
-              ((1,2), (3.3, 4.4), "Foo"))
-
+#  ...input is a Tuple
+@test_throws AssertionError canonicalize(template, ((1,2)))
+c = canonicalize(template, ((1,2), (3, 4.), "Foo"))
 @test c.xrange == (1, 2)
-@test c.yrange == (3.3, 4.4)
+@test c.yrange == (3, 4.)
 @test c.title == "Foo"
 
-c = canonicalize(template,
-              ((11,12), (13.3, 14.4), "Foo"))
-@test c.xrange == (11, 12)
-@test c.yrange == (13.3, 14.4)
+#  ...inputs are given as keywords
+c = canonicalize(template, yr=(1,2), xr=(3.3, 4.4), tit="Foo")
+@test c.yrange == (1, 2)
+@test c.xrange == (3.3, 4.4)
 @test c.title == "Foo"
-
-
-c = canonicalize(template,
-              xr=(21,22), tit="Bar")
-@test c.xrange == (21, 22)
-@test c.yrange == (0., 0.)
-@test c.title == "Bar"
-
-
-function wrapper(template; kwargs...)
-    return canonicalize(template; kwargs...)
-end
-c = wrapper(template; xr=(31,32), tit="BAZ")
-@test c.xrange == (31, 32)
-@test c.yrange == (0., 0.)
-@test c.title == "BAZ"
-
 
 
 
