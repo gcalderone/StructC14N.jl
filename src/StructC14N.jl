@@ -60,9 +60,7 @@ function myconvert(template, vv)
         tt = typeof(template)
     end
 
-    if isa(tt, Union)
-        tt = nonmissingtype(tt)
-        @assert !isa(tt, Union) "The only supported unions are of the form Union{Missing, T}"
+    if isa(tt, Union)  &&  (tt != nonmissingtype(tt))
         ismissing(vv)  &&  (return missing)
     end
 
