@@ -1,30 +1,19 @@
 module StructC14N
 
-export canonicalize
+using DataStructures
 
-import Base.convert
+export canonicalize
 
 ######################################################################
 # Private functions
 ######################################################################
 
 """
-  `convert(NamedTuple, str)`
-
-  Convert a structure into a named tuple.
-"""
-function convert(::Type{NamedTuple}, str)
-    k = fieldnames(typeof(str))
-    return NamedTuple{k}(getfield.(Ref(str), k))
-end
-
-
-"""
   `findabbrv(v::Vector{Symbol})`
 
   Find all unique abbreviations of symbols in `v`.  Return a tuple of
   two `Vector{Symbol}`: the first contains all possible abbreviations;
-  the second contains the corresponding un-abbreviated symbols.
+  the second contains the corresponding non-abbreviated symbols.
 """
 function findabbrv(symLong::Vector{Symbol})
     @assert length(symLong) >= 1
@@ -58,8 +47,9 @@ function findabbrv(symLong::Vector{Symbol})
         end
     end
     @assert length(unique(outLong)) == length(symLong) "Input symbols have ambiguous abbreviations"
+
     i = sortperm(outAbbrv)
-    return (outAbbrv[i], outLong[i])
+    return OrderedDict(Pair.(outAbbrv[i], outLong[i]))
 end
 
 
@@ -71,18 +61,15 @@ function myconvert(template, vv)
     end
 
     if isa(tt, Union)
-        if getfield(tt, :a) == Missing
-            (ismissing(vv))  &&  (return vv)
-            tt = getfield(tt, :b)
-        elseif getfield(tt, :b) == Missing
-            (ismissing(vv))  &&  (return vv)
-            tt = getfield(tt, :a)
-        end
+        tt = nonmissingtype(tt)
+        @assert !isa(tt, Union) "The only supported unions are of the form Union{Missing, T}"
+        ismissing(vv)  &&  (return missing)
     end
 
     if typeof(vv) <: AbstractString  &&  tt <: Number
         return convert(tt, Meta.parse(vv))
     end
+
     if typeof(vv) <: Number  &&  tt <: AbstractString
         return string(vv)
     end
@@ -90,7 +77,7 @@ function myconvert(template, vv)
     if length(methods(parse, (Type{tt}, typeof(vv)))) > 0
         return parse(tt, vv)
     end
-    
+
     if length(methods(convert, (Type{tt}, typeof(vv)))) > 0
         return convert(tt, vv)
     end
@@ -104,134 +91,225 @@ end
 ######################################################################
 
 
-# input::NamedTuple
+# Template is a NamedTuple
 """
   `canonicalize(template::NamedTuple, input::NamedTuple)`
 
-  Canonicalize the `input` named tuple according to `template` and
-  return the "canonicalized" named tuple.
+  Canonicalize an input NamedTuple according to a NamedTuple template.
+  Returns a NamedTuple.
+
+  Default values must be specified in `template`.  To avoid specifying
+  a default value the corresponding item must be a `Type` object, and
+  its default value will be `missing` (unless overriden in `input`).
+
+# Examples
+```julia-repl
+julia> template = (xrange=NTuple{2, Number},
+                   yrange=NTuple{2, Number},
+                   title="Default string");
+
+julia> c = canonicalize(template, (xr=(1,2),))
+(xrange = (1, 2), yrange = missing, title = "Default string")
+
+julia> c = canonicalize(template, (xr=(1,2), yrange=(3, 4.), tit="Foo"))
+(xrange = (1, 2), yrange = (3, 4.0), title = "Foo")
+```
 """
-function canonicalize(template::NamedTuple, input::NamedTuple, dconvert=Dict())
-    (abbrv, long) = findabbrv(collect(keys(template)))
+function canonicalize(template::NamedTuple, input::NamedTuple, dconvert=Dict{Symbol, Function}())
+    abbrv = findabbrv(collect(keys(template)))
 
-    # Default values.  Each element in the output vector is `Missing`
-    # if the corresponding element in the tuple is a `Type`, otherwise
-    # it is the value itself.
-    tmp = collect(values(template))
-    outval = Vector{Any}(undef, length(tmp))
-    for i in 1:length(tmp)
-        if isa(tmp[i], Type)
-            outval[i] = missing
+    # Default values are explicitly provided in `template`.  If a slot
+    # in `template` is a `Type` object the corresponding default value
+    # is `missing`.
+    output = OrderedDict{Symbol, Any}()
+    for key in keys(template)
+        val = deepcopy(getproperty(template, key))
+        if isa(val, Type)
+            output[key] = missing  # default value is missing
         else
-            outval[i] = deepcopy(tmp[i])
+            output[key] = val      # default value is copied from the template
         end
     end
 
-    for i in 1:length(input)
-        key = keys(input)[i]
-        j = findall(key .== abbrv)
-        if length(j) == 0
-            error("Unexpected key: " * String(key))
-        end
-        @assert length(j) == 1
-        j = j[1]
-        k = findall(long[j] .== keys(template))
-        @assert length(k) == 1
-        k = k[1]
-        if haskey(dconvert, key)
-            outval[k] = dconvert[key](input[i])
+    # Override with input values
+    for key in keys(input)
+        val = deepcopy(getproperty(input, key))
+        @assert haskey(abbrv, key) "Unexpected key: $key"
+        longkey = abbrv[key]
+        if haskey(dconvert, longkey)
+            output[longkey] = dconvert[longkey](val)
         else
-            outval[k] = myconvert(template[k], input[i])
+            output[longkey] = myconvert(getproperty(template, longkey), val)
         end
     end
-    return NamedTuple{keys(template)}(tuple(outval...))
+    return NamedTuple(output)
 end
 
 
+# Template is a structure definition
 """
   `canonicalize(template::DataType, input::NamedTuple)`
 
-  Canonicalize the `input` named tuple according to `template` and
-  return the "canonicalized" structure.
+  Canonicalize an input NamedTuple according to a template in a
+  structure definition.  Returns a structure instance.
+
+  If `input` contains less values than required in the template an
+  attempt will be made to create a structure with `missing` values.
+  If this is forbidden by the structure definition an error is raised.
+
+# Examples
+```julia-repl
+julia> struct AStruct
+           xrange::NTuple{2, Number}
+           yrange::NTuple{2, Number}
+           title::Union{Missing, String}
+       end
+
+julia> canonicalize(AStruct, (xr=(1,2), yr=(3,4.)))
+AStruct((1, 2), (3, 4.0), missing)
+
+julia> canonicalize(AStruct, (xr=(1,2), yr=(3,4.), tit="Foo"))
+AStruct((1, 2), (3, 4.0), "Foo")
+```
 """
-function canonicalize(template::DataType, input::NamedTuple, dconvert=Dict())
-    (abbrv, long) = findabbrv(collect(fieldnames(template)))
+function canonicalize(template::DataType, input::NamedTuple, dconvert=Dict{Symbol, Function}())
+    @assert isstructtype(template)
+    abbrv = findabbrv(collect(fieldnames(template)))
 
-    #Default values
-    outval = Vector{Any}(missing, length(fieldnames(template)))
+    # Default value is `missing` for all fields
+    output = OrderedDict{Symbol, Any}()
+    for key in fieldnames(template)
+        output[key] = missing
+    end
 
-    for i in 1:length(input)
-        key = keys(input)[i]
-        j = findall(key .== abbrv)
-        if length(j) == 0
-            error("Unexpected key: " * String(key))
-        end
-        @assert length(j) == 1
-        j = j[1]
-        k = findall(long[j] .== fieldnames(template))
-        @assert length(k) == 1
-        k = k[1]
-        if haskey(dconvert, key)
-            outval[k] = dconvert[key](input[i])
+    # Override with input values
+    for key in keys(input)
+        val = deepcopy(getproperty(input, key))
+        @assert haskey(abbrv, key) "Unexpected key: $key"
+        longkey = abbrv[key]
+        if haskey(dconvert, longkey)
+            output[longkey] = dconvert[longkey](val)
         else
-            outval[k] = myconvert(fieldtype(template, k), input[i])
+            output[longkey] = myconvert(fieldtype(template, longkey), val)
         end
     end
-    return template(outval...)
+    return template(collect(values(output))...)
 end
 
 
+# Template is a structure instance
 """
   `canonicalize(template, input::NamedTuple)`
 
-  Canonicalize the `input` named tuple according to `template` and
-  return the "canonicalized" structure.
+  Canonicalize an input NamedTuple according to a template in a
+  structure instance.  Returns a structure instance.
+
+  All values in the template are taken as default values.
+
+# Examples
+```julia-repl
+julia> struct AStruct
+           xrange::NTuple{2, Number}
+           yrange::NTuple{2, Number}
+           title::Union{Missing, String}
+       end
+
+julia> template = AStruct((0,0), (0.,0.), missing);
+
+julia> canonicalize(template, (xr=(1,2),))
+AStruct((1, 2), (0.0, 0.0), missing)
+
+julia> canonicalize(template, (yr=(1,2), xr=(3.3, 4.4), tit="Foo"))
+AStruct((3.3, 4.4), (1, 2), "Foo")
+```
 """
-canonicalize(template, input::NamedTuple, dconvert=Dict()) =
-    return canonicalize(typeof(template), merge(convert(NamedTuple, template), input), dconvert)
+function canonicalize(instance, input::NamedTuple, dconvert=Dict{Symbol, Function}())
+    template = typeof(instance)
+    @assert isstructtype(template)
+    abbrv = findabbrv(collect(fieldnames(template)))
+
+    # Default values are copied from template
+    output = OrderedDict{Symbol, Any}()
+    for key in fieldnames(template)
+        output[key] = deepcopy(getfield(instance, key))
+    end
+
+    # Override with input values
+    for key in keys(input)
+        val = deepcopy(getproperty(input, key))
+        @assert haskey(abbrv, key) "Unexpected key: $key"
+        longkey = abbrv[key]
+        if haskey(dconvert, longkey)
+            output[longkey] = dconvert[longkey](val)
+        else
+            output[longkey] = myconvert(fieldtype(template, longkey), val)
+        end
+    end
+    return template(collect(values(output))...)
+end
 
 
-# input::Tuple
-"""
-  `canonicalize(template::NamedTuple, input::Tuple)`
 
-  Canonicalize the `input` tuple according to `template`, and
-  return the "canonicalized" named tuple.
-"""
-canonicalize(template::NamedTuple, input::Tuple, dconvert=Dict()) = canonicalize(template, NamedTuple{keys(template)}(input), dconvert)
-
-
-"""
-  `canonicalize(template::DataType, input::Tuple)`
-
-  Canonicalize the `input` tuple according to `template`, and
-  return the "canonicalized" structure.
-"""
-canonicalize(template::DataType, input::Tuple, dconvert=Dict()) = canonicalize(template, NamedTuple{fieldnames(template)}(input), dconvert)
-
-
+# Input is a Tuple: convert to a NamedTuple using template names and
+# invoke previous methods
 """
   `canonicalize(template, input::Tuple)`
 
-  Canonicalize the `input` tuple according to the `template` structure, and
-  return the "canonicalized" structure.
+  Canonicalize an input tuple according to a template.  Returns a
+  NamedTuple or a structure instance according to the type of
+  `template`.  The input tuple must have same number of elements as
+  the template.
+
+# Examples
+```julia-repl
+julia> template = (xrange=NTuple{2,Number},
+                   yrange=NTuple{2,Number},
+                   title="Default string");
+
+julia> canonicalize(template, ((1,2), (3, 4.), "Foo"))
+(xrange = (1, 2), yrange = (3, 4.0), title = "Foo")
+
+julia> struct AStruct
+           xrange::NTuple{2, Number}
+           yrange::NTuple{2, Number}
+           title::Union{Missing, String}
+       end;
+
+julia> canonicalize(AStruct, ((1,2), (3, 4.), "Foo"))
+AStruct((1, 2), (3, 4.0), "Foo")
+
+julia> template = AStruct((0,0), (0.,0.), missing);
+
+julia> canonicalize(template, ((1,2), (3, 4.), "Foo"))
+AStruct((1, 2), (3, 4.0), "Foo")
+```
 """
-canonicalize(template, input::Tuple, dconvert=Dict()) = canonicalize(template, NamedTuple{fieldnames(typeof(template))}(input), dconvert)
+function canonicalize(template, input::Tuple, dconvert=Dict{Symbol, Function}())
+    if isa(template, NamedTuple)
+        @assert length(template) == length(input) "Input tuple must have same length as template"
+        return canonicalize(template, NamedTuple{keys(template)}(input), dconvert)
+    elseif isa(template, DataType)
+        @assert isstructtype(template)
+        @assert length(fieldnames(template)) == length(input) "Input tuple must have same number of fields as the template"
+        return canonicalize(template, NamedTuple{fieldnames(template)}(input), dconvert)
+    elseif isstructtype(typeof(template))
+        @assert isstructtype(typeof(template))
+        @assert length(fieldnames(typeof(template))) == length(input) "Input tuple must have same number of fields as the template"
+        return canonicalize(template, NamedTuple{fieldnames(typeof(template))}(input), dconvert)
+    end
+    error("Template must be a NamedTuple, a structure definition or a structure instance")
+end
 
 
+# Inputs are given as keywords
 """
   `canonicalize(template, kwargs...)`
 
   Canonicalize the key/value pairs given as keywords according to the
   `template` structure or named tuple.
 """
-function canonicalize(template, dconvert=Dict(); kwargs...)
-    a = collect(kwargs)
-    k = getindex.(a, 1)
-    v = getindex.(a, 2)
-    nt = NamedTuple{tuple(k...)}(tuple(v...))
-    return canonicalize(template, nt, dconvert)
+function canonicalize(template, dconvert=Dict{Symbol, Function}(); kwargs...)
+    return canonicalize(template, NamedTuple(kwargs), dconvert)
 end
-
 
 end # module
