@@ -14,47 +14,19 @@ Install with:
 ## Introduction
 ________
 
-This package exports the `canonicalize(template, input)` function allowing *canonicalization* of input values according to a *template*.  The template must be a structure definition (i.e. a `DataType`), a structure instance or a named tuple,  The input values may be given either as a named tuple, as a tuple, or as keywords.  A characterizing feature in `StructC14N` is that field names in input may be given in abbreviated forms, as long as the abbreviation is unambiguous among the template field names.  The output will be either a structure instance or a named tuple (depending on the type of `template`) whose values are copied from the inputs, or (if a field specification is missing) from the template default values.
+This package exports the `canonicalize(template, input)` function allowing *canonicalization* of input values according to a *template*.  The template must be a structure definition (i.e. a `DataType`), a structure instance or a named tuple,  The input values may be given either as a named tuple, as a tuple, or as keywords.  A **characterizing feature** of `StructC14N` is that field names in input may be given in abbreviated forms, as long as the abbreviation is unambiguous among the template field names.  The output will be either a structure instance or a named tuple (depending on the type of `template`), whose values are copied (and converted, if necessary) from the inputs, or (if a field specification is missing) from the template default values.  A further argument of type `Dict{Symbol, Function}` may be given to `canonicalize` to specify the conversion functions to be used to populate output from input values.
 
-Type `? canonicalize` in the REPL to see the documentation and examples for individual methods.
+The following table shows the beahviour details, which depends on the type of `template`:
+| Template                   | Return type  | Default values | Relation between template field types and output types?     | Missing inputs for a field results in           |
+|----------------------------|--------------| ---------------|-------------------------------------------------------------|-------------------------------------------------|
+| A `NamedTuple` instance    | `NamedTuple` | Allowed        | Implicit (type of default values) or explicit (as a `Type`) | Default value or `missing` (1)                  |
+| A `T` structure definition | `T` instance | Not allowed    | Identical to structure definition                           | `missing` if allowed by struct, otherwise error |
+| A `T` structure instance   | `T` instance | Allowed        | Identical to structure definition                           | Default value                                   |
 
+(1): Note that the output named tuple may contain `missing`s even if this is not allowed by the template.
 
-| Template               | Return type        | Default values | Types specification                                 | Missing inputs result in                         |
-|------------------------|--------------------| ---------------|-----------------------------------------------------|--------------------------------------------------|
-| `NamedTuple` instance  | `NamedTuple`       | Allowed        | As type of default value, or explicitly as a `Type` | Default value or `missing` (1)                   |
-| A structure definition | Structure instance | Not allowed    | Explicitly in structure definition                  | `missing` if allowed by struct , otherwise error |
-| A structure instance   | Structure instance | Allowed        | Explicitly in structure definition                  | Default value                                    |
+Type `? canonicalize` in the REPL to read the documentation for individual methods, and the rest of this file for a few examples.
 
-
-
-
-
-
-
-
-The signature is as follows:
-```julia
-canonicalize(template, input)
-```
-`template` can be either a structure or a named tuple.  Return value has the same type as `template`.  `input` can be a structure, a named tuple or a tuple.  In the latter case the tuple must contains the same number of items as the `template`.
-
-
-## Canonicalization rules:
-- output keys are the same as in `template`;
-
-- if `input` contains less items than `template`, the default values in `template` will be used to fill unspecified values;
-
-- output default values are determined as follows:
-  - if `template` is a named tuple and if one of its value is a Type `T`, the corresponding default value is `Missing`;
-  - if `template` is not a named tuple, or if one of its value is of Type `T`, the corresponging default value is the value itself;
-
-- output default values are overridden by values in `input` if a key in `input` is the same, or it is an unambiguous abbreviation, of one of the keys in `template`;
-
-- output override occurs regardless of the order of items in `template` and `input`;
-
-- if a key in `input` is not an abbreviation of the keys in `template`,  or if the abbreviation is ambiguous, an error is raised;
-
-- values in output are deep copied from `input`, and converted to the appropriate type.  If conversion is not possible an error is raised.
 
 
 ## Examples
@@ -106,7 +78,7 @@ By using `canonicalize` we may re-implement the function as follows
 function Foo(; kwargs...)
     template = (; OptionalKW=Bool, Keyword1=1,
                AnotherKeyword=2.0, StillAnotherOne=3, KeyString="bar")
-    kw = StructC14N.canonicalize(template; kwargs...)
+    kw = canonicalize(template; kwargs...)
     @show kw.OptionalKW
     @show kw.Keyword1
     @show kw.AnotherKeyword

@@ -115,7 +115,7 @@ julia> c = canonicalize(template, (xr=(1,2), yrange=(3, 4.), tit="Foo"))
 (xrange = (1, 2), yrange = (3, 4.0), title = "Foo")
 ```
 """
-function canonicalize(template::NamedTuple, input::NamedTuple, dconvert=Dict())
+function canonicalize(template::NamedTuple, input::NamedTuple, dconvert=Dict{Symbol, Function}())
     abbrv = findabbrv(collect(keys(template)))
 
     # Default values are explicitly provided in `template`.  If a slot
@@ -172,7 +172,7 @@ julia> canonicalize(AStruct, (xr=(1,2), yr=(3,4.), tit="Foo"))
 AStruct((1, 2), (3, 4.0), "Foo")
 ```
 """
-function canonicalize(template::DataType, input::NamedTuple, dconvert=Dict())
+function canonicalize(template::DataType, input::NamedTuple, dconvert=Dict{Symbol, Function}())
     @assert isstructtype(template)
     abbrv = findabbrv(collect(fieldnames(template)))
 
@@ -223,7 +223,7 @@ julia> canonicalize(template, (yr=(1,2), xr=(3.3, 4.4), tit="Foo"))
 AStruct((3.3, 4.4), (1, 2), "Foo")
 ```
 """
-function canonicalize(instance, input::NamedTuple, dconvert=Dict())
+function canonicalize(instance, input::NamedTuple, dconvert=Dict{Symbol, Function}())
     template = typeof(instance)
     @assert isstructtype(template)
     abbrv = findabbrv(collect(fieldnames(template)))
@@ -284,7 +284,7 @@ julia> canonicalize(template, ((1,2), (3, 4.), "Foo"))
 AStruct((1, 2), (3, 4.0), "Foo")
 ```
 """
-function canonicalize(template, input::Tuple, dconvert=Dict())
+function canonicalize(template, input::Tuple, dconvert=Dict{Symbol, Function}())
     if isa(template, NamedTuple)
         @assert length(template) == length(input) "Input tuple must have same length as template"
         return canonicalize(template, NamedTuple{keys(template)}(input), dconvert)
@@ -308,7 +308,7 @@ end
   Canonicalize the key/value pairs given as keywords according to the
   `template` structure or named tuple.
 """
-function canonicalize(template, dconvert=Dict(); kwargs...)
+function canonicalize(template, dconvert=Dict{Symbol, Function}(); kwargs...)
     return canonicalize(template, NamedTuple(kwargs), dconvert)
 end
 

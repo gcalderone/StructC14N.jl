@@ -108,3 +108,14 @@ c = canonicalize(configtemplate, eval(Meta.parse("($configentry)")))
 @test c.optFloat == 20.0
 
 
+function myparse(input)
+    if input == "ten"
+        return 10
+    end
+    return 1
+end
+configentry = "optFloat=20, optStr=\"aaa\", optInt=\"ten\""
+c = canonicalize(configtemplate, eval(Meta.parse("($configentry)")), Dict(:optInt=>myparse))
+@test c.optStr == "aaa"
+@test c.optInt == 10
+@test c.optFloat == 20.0
