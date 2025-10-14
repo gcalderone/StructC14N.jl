@@ -1,7 +1,7 @@
 name = "StructC14N"
 uuid = "d2514e9c-36c4-5b8e-97e2-51e7675c221c"
 authors = ["Giorgio Calderone <giorgio.calderone@gmail.com>"]
-version = "0.3.2"
+version = "0.4.0"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
